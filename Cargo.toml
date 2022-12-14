@@ -1,0 +1,11 @@
+[package]
+name = "stream-operator"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.nix]
+build = true
+
+[dependencies]
+async-nats = "0.24.0"
+
