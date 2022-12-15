@@ -7,5 +7,29 @@ edition = "2021"
 build = true
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
 async-nats = "0.24.0"
+futures = "0.3.25"
+rdkafka = { version = "0.29.0", features = []}
+clap = "2.18.0"
+hdrhistogram = "7.0.0"
 
+[[bin]]
+name = "kafka"
+path = "src/kafka.rs"
+
+[[bin]]
+name = "nats"
+path = "src/nats.rs"
+
+[[bin]]
+name = "pubsub"
+path = "src/pubsub.rs"
+
+[[bin]]
+name = "pulsar"
+path = "src/pulsar.rs"
+
+[[bin]]
+name = "rabbit"
+path = "src/rabbit.rs"
