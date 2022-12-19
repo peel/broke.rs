@@ -51,7 +51,10 @@ async fn main() {
         };
 
         // Do something with the delivery data (The message payload)
-
+        match std::str::from_utf8(&delivery.data) {
+            Ok(m) => println!("Received {}", m),
+            Err(e) => println!("Received invalid sequence {}", e)
+        };
         delivery
             .ack(BasicAckOptions::default())
             .await

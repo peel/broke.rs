@@ -1,0 +1,8 @@
+version: '3'
+services:
+  standalone:
+    image: apachepulsar/pulsar:2.10.2
+    ports:
+      - 8080:8080
+      - 6650:6650
+    command: bin/pulsar standalone
