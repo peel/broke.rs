@@ -11,12 +11,18 @@ tokio = { version = "1", features = ["full"] }
 async-nats = "0.24.0"
 futures = "0.3.25"
 rdkafka = { version = "0.29.0", features = []}
-clap = "2.18.0"
-hdrhistogram = "7.0.0"
+pulsar = "5.0.0"
+serde = "1.0.150"
+lapin = "2.1.1"
+cloud-pubsub = "0.8.0"
+tokio-reactor-trait = "1.1.0"
+tokio-executor-trait = "2.1.0"
+serde_derive = "1.0.151"
+envy = "0.4.2"
 
-[[bin]]
-name = "kafka"
-path = "src/kafka.rs"
+# [[bin]]
+# name = "kafka"
+# path = "src/kafka.rs"
 
 [[bin]]
 name = "nats"
@@ -26,9 +32,9 @@ path = "src/nats.rs"
 name = "pubsub"
 path = "src/pubsub.rs"
 
-[[bin]]
-name = "pulsar"
-path = "src/pulsar.rs"
+# [[bin]]
+# name = "pulsar"
+# path = "src/pulsar.rs"
 
 [[bin]]
 name = "rabbit"
