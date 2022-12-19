@@ -2001,7 +2001,9 @@ dependencies = [
  "libc",
  "libz-sys",
  "num_enum",
+ "openssl-sys",
  "pkg-config",
+ "zstd-sys",
 ]
 
 [[package]]
@@ -3336,4 +3338,5 @@ checksum = "4fa202f2ef00074143e219d15b62ffc317d17cc33909feac471c044087cad7b0"
 dependencies = [
  "cc",
  "libc",
+ "pkg-config",
 ]
