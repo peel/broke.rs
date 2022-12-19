@@ -2554,6 +2554,7 @@ dependencies = [
  "rdkafka",
  "serde",
  "serde_derive",
+ "serde_json",
  "tokio",
  "tokio-executor-trait",
  "tokio-reactor-trait",
