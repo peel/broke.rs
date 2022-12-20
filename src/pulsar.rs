@@ -9,6 +9,9 @@ use pulsar::{
     TokioExecutor,
 };
 
+use crate::data::event;
+mod data;
+
 #[derive(Serialize, Deserialize)]
 struct TestData {
     data: String,
@@ -56,7 +59,7 @@ async fn main() -> Result<(), pulsar::Error> {
         loop {
             producer
                 .send(TestData {
-                    data: "data".to_string(),
+                    data: &event.to_string(),
                 })
                 .await
                 .unwrap()

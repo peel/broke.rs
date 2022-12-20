@@ -3,6 +3,9 @@ use cloud_pubsub::error;
 use cloud_pubsub::{Client, EncodedMessage, FromPubSubMessage};
 use serde_derive::Deserialize;
 
+use crate::data::event;
+mod data;
+
 #[derive(Deserialize)]
 struct Config {
     topic: String,

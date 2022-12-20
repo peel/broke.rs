@@ -6,6 +6,9 @@ use lapin::{
     BasicProperties, Connection, ConnectionProperties,
 };
 
+use crate::data::event;
+mod data;
+
 #[tokio::main]
 async fn main() {
     let uri = "amqp://localhost:5672";
@@ -66,7 +69,7 @@ async fn main() {
             "",
             "queue_test",
             BasicPublishOptions::default(),
-            b"Hello world!",
+            &event.as_bytes(),
             BasicProperties::default(),
         )
         .await
