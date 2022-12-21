@@ -30,7 +30,7 @@ async fn main() -> Result<(), async_nats::Error> {
         let mut i = 0_usize;
         loop {
             jetstream
-                .publish(format!("events.{}", i), &event.into())
+                .publish(format!("events.{}", i), event.into())
                 .await
                 .unwrap();
             i += 1;

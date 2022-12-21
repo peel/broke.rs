@@ -9,6 +9,13 @@
       root = ./.;
       config = common: {
         shell.packages = [common.pkgs.rust-analyzer common.pkgs.rdkafka common.pkgs.protobuf] ++ common.pkgs.lib.optionals common.pkgs.stdenv.isDarwin [common.pkgs.darwin.apple_sdk.frameworks.Security common.pkgs.darwin.apple_sdk.frameworks.CoreFoundation common.pkgs.zlib];
+        shell.commands = [
+          {package = common.pkgs.kafkactl;}
+          {package = common.pkgs.kt;}
+          {package = common.pkgs.kubectl;}
+          {package = common.pkgs.kubernetes-helm;}
+          {package = common.pkgs.natscli;}
+        ];
         shell.env = [
           {
             name = "LD_LIBRARY_PATH";
