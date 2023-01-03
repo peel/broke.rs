@@ -2,6 +2,8 @@
 #![recursion_limit = "256"]
 #[macro_use]
 extern crate serde;
+use std::env;
+
 use futures::TryStreamExt;
 use pulsar::{
     message::{proto, proto::command_subscribe::SubType, Payload},
@@ -9,7 +11,7 @@ use pulsar::{
     TokioExecutor,
 };
 
-use crate::data::event;
+use crate::data::EVENT;
 mod data;
 
 #[derive(Serialize, Deserialize)]
@@ -38,8 +40,8 @@ impl DeserializeMessage for TestData {
 #[tokio::main]
 async fn main() -> Result<(), pulsar::Error> {
 
-    let addr = "pulsar://127.0.0.1:6650";
-    let pulsar: Pulsar<_> = Pulsar::builder(addr, TokioExecutor).build().await?;
+    let addr = env::var("BROKER_URL").unwrap_or_else(|_| "pulsar://127.0.0.1:6650".to_string());
+    let pulsar: Pulsar<_> = Pulsar::builder(&addr, TokioExecutor).build().await?;
     let mut producer = pulsar
         .producer()
         .with_topic("test")
@@ -59,7 +61,7 @@ async fn main() -> Result<(), pulsar::Error> {
         loop {
             producer
                 .send(TestData {
-                    data: &event.to_string(),
+                    data: EVENT.to_string(),
                 })
                 .await
                 .unwrap()
@@ -72,7 +74,7 @@ async fn main() -> Result<(), pulsar::Error> {
         }
     });
 
-    let pulsar2: Pulsar<_> = Pulsar::builder(addr, TokioExecutor).build().await?;
+    let pulsar2: Pulsar<_> = Pulsar::builder(&addr, TokioExecutor).build().await?;
 
     let mut consumer: Consumer<TestData, _> = pulsar2
         .consumer()

@@ -5,7 +5,7 @@ use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::message::Message;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 
-use crate::data::event;
+use crate::data::EVENT;
 mod data;
 
 #[tokio::main]
@@ -32,7 +32,7 @@ async fn main() -> Result<(), rdkafka::error::KafkaError> {
         let mut i = 0_usize;
         loop {
             producer
-                .send_result(FutureRecord::to(&topic).key(&i.to_string()).payload(&event))
+                .send_result(FutureRecord::to(&topic).key(&i.to_string()).payload(EVENT))
                 .unwrap()
                 .await
                 .unwrap()

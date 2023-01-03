@@ -6,7 +6,7 @@ use lapin::{
     BasicProperties, Connection, ConnectionProperties,
 };
 
-use crate::data::event;
+use crate::data::EVENT;
 mod data;
 
 #[tokio::main]
@@ -69,7 +69,7 @@ async fn main() {
             "",
             "queue_test",
             BasicPublishOptions::default(),
-            &event.as_bytes(),
+            EVENT.as_bytes(),
             BasicProperties::default(),
         )
         .await

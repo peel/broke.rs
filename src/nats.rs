@@ -3,7 +3,7 @@ use std::{env, str::from_utf8};
 use async_nats::jetstream::{self, consumer::PullConsumer};
 use futures::StreamExt;
 
-use crate::data::event;
+use crate::data::EVENT;
 mod data;
 
 #[tokio::main]
@@ -11,7 +11,7 @@ async fn main() -> Result<(), async_nats::Error> {
     let nats_url = env::var("BROKER_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
     let client = async_nats::connect(nats_url).await?;
     let jetstream = jetstream::new(client);
-    let stream_name = String::from("EVENTS");
+    let stream_name = String::from("events");
 
     let consumer: PullConsumer = jetstream
         .create_stream(jetstream::stream::Config {
@@ -30,7 +30,7 @@ async fn main() -> Result<(), async_nats::Error> {
         let mut i = 0_usize;
         loop {
             jetstream
-                .publish(format!("events.{}", i), event.into())
+                .publish(format!("events.{}", i), EVENT.into())
                 .await
                 .unwrap();
             i += 1;

@@ -1,46 +1,71 @@
 {
+  description = "Broker comparison testing utils";
+
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nci.url = "github:yusdacra/nix-cargo-integration";
-    nci.inputs.nixpkgs.follows = "nixpkgs";
-  };
-  outputs = inputs:
-    inputs.nci.lib.makeOutputs {
-      root = ./.;
-      config = common: {
-        shell.packages = [common.pkgs.rust-analyzer common.pkgs.rdkafka common.pkgs.protobuf] ++ common.pkgs.lib.optionals common.pkgs.stdenv.isDarwin [common.pkgs.darwin.apple_sdk.frameworks.Security common.pkgs.darwin.apple_sdk.frameworks.CoreFoundation common.pkgs.zlib];
-        shell.commands = [
-          {package = common.pkgs.kafkactl;}
-          {package = common.pkgs.kt;}
-          {package = common.pkgs.kubectl;}
-          {package = common.pkgs.kubernetes-helm;}
-          {package = common.pkgs.natscli;}
-        ];
-        shell.env = [
-          {
-            name = "LD_LIBRARY_PATH";
-            value = "/run/current-system/sw/lib:$LD_LIBRARY_PATH";
-          }
-          {
-            name = "PROTOC";
-            value = "${common.pkgs.protobuf}/bin/protoc";
-          }
-          {
-            name = "LDFLAGS";
-            value = "-lgcc_eh";
-          }
-        ];
-      };
-      pkgConfig = common: let
-        overrides = rec {
-          PROTOC = "${common.pkgs.protobuf}/bin/protoc";
-          buildInputs = old: old ++ [common.pkgs.protobuf common.pkgs.zlib common.pkgs.rdkafka] ++ common.pkgs.lib.optionals common.pkgs.stdenv.isDarwin [common.pkgs.darwin.apple_sdk.frameworks.Security common.pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
-          nativeBuildInputs = buildInputs;
-          runtimeLibs = common.pkgs.protobuf;
-        };
-      in {
-        default.depsOverrides.override = overrides;
-        default.overrides.override = overrides;
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    flake-utils.url = "github:numtide/flake-utils";
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
       };
     };
+  };
+
+  outputs = { self, nixpkgs, crane, flake-utils, rust-overlay, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ (import rust-overlay) ];
+        };
+
+        rustToolchain = pkgs.rust-bin.stable.latest.default;
+        #   .override {
+        #    targets = [ "aarch64-unknown-linux-musl" ];
+        # };
+
+        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+        default = craneLib.buildPackage {
+          src = craneLib.cleanCargoSource ./.;
+          buildInputs = [pkgs.protobuf pkgs.zlib pkgs.rdkafka pkgs.openssl pkgs.pkgconfig] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
+          # CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
+          # CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+        };
+      in
+        {
+          checks = {
+            inherit default;
+          };
+
+          packages = {
+            inherit default;
+            docker = pkgs.dockerTools.buildLayeredImage {
+              name = "peel/stream-operator";
+              created = "now";
+              tag = "latest";
+              contents = [ default ];
+              config.Cmd = [ "/bin/nats" ];
+            };
+          };
+
+          devShells.default = pkgs.mkShell {
+            inputsFrom = builtins.attrValues self.checks;
+            nativeBuildInputs = with pkgs; [
+              cargo
+              rustc
+              rust-analyzer
+              alejandra
+            ];
+          };
+        });
 }
