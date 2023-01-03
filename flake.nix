@@ -25,21 +25,13 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ (import rust-overlay) ];
         };
 
-        rustToolchain = pkgs.rust-bin.stable.latest.default;
-        #   .override {
-        #    targets = [ "aarch64-unknown-linux-musl" ];
-        # };
-
-        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+        craneLib = (crane.mkLib pkgs);
 
         default = craneLib.buildPackage {
           src = craneLib.cleanCargoSource ./.;
-          buildInputs = [pkgs.protobuf pkgs.zlib pkgs.rdkafka pkgs.openssl pkgs.pkgconfig] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
-          # CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
-          # CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+          buildInputs = [pkgs.protobuf pkgs.zlib pkgs.rdkafka pkgs.openssl pkgs.pkg-config] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
         };
       in
         {
@@ -61,11 +53,15 @@
           devShells.default = pkgs.mkShell {
             inputsFrom = builtins.attrValues self.checks;
             nativeBuildInputs = with pkgs; [
+              openssl
+              pkg-config
+              zlib
+              protobuf
               cargo
               rustc
               rust-analyzer
               alejandra
-            ];
+            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
           };
         });
 }
