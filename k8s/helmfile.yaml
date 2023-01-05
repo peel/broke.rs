@@ -1,0 +1,54 @@
+---
+repositories:
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+  - name: nats-io
+    url: https://nats-io.github.io/k8s/helm/charts/
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+commonLabels:
+  stack: snplw-rnd
+releases:
+  - name: ingress-nginx
+    chart: ingress-nginx/ingress-nginx
+    atomic: true
+    installed: true
+    labels:
+      name: nginx
+    version: 3.34.0
+    values:
+      - controller:
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          watchIngressWithoutClass: true
+          service:
+            type: NodePort
+            nodePorts:
+              http: 32080
+              https: 32443
+          updateStrategy:
+            rollingUpdate:
+              maxUnavailable: 1
+            type: RollingUpdate
+          metrics:
+            enabled: true
+          defaultBackend:
+            enabled: true
+          serviceAccount:
+            create: true
+            name: nginx-ingress-service-account
+          missingFileHandler: Warn
+  - name: snplw-nats
+    chart: nats/nats
+    values:
+      - nats/values.yml
+  - name: snplw-nats-app
+    chart: ./pubsub
+    values:
+      - ./pubsub/values.yaml
+      - broker_uri: nats://snplw-nats:4222
+kubeVersion: v1.25

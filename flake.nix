@@ -62,9 +62,10 @@
               rust-analyzer
               rustfmt
               alejandra
-              kubernetes-helm
               kubectl
               natscli
+              (pkgs.wrapHelm pkgs.kubernetes-helm { plugins = [ pkgs.kubernetes-helmPlugins.helm-diff ]; })
+              helmfile
             ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
           };
         });
