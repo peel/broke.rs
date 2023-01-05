@@ -42,7 +42,7 @@
           packages = {
             inherit default;
             docker = pkgs.dockerTools.buildLayeredImage {
-              name = "peel/stream-operator";
+              name = "peelsky/stream-operator";
               created = "now";
               tag = "latest";
               contents = [ default ];
@@ -60,6 +60,7 @@
               cargo
               rustc
               rust-analyzer
+              rustfmt
               alejandra
               kubernetes-helm
               kubectl

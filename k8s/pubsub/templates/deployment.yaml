@@ -50,6 +50,10 @@ spec:
           env:
             - name: "BROKER_URL"
               value: {{ .Values.data.broker_url }}
+            - name: "ENTITY_COUNT"
+              value: "{{ .Values.data.entity_count }}"
+            - name: "EVENT_COUNT"
+              value: "{{ .Values.data.event_count }}"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

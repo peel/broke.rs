@@ -3,10 +3,12 @@ replicaCount: 3
 image:
   repository: peelsky/stream-operator
   pullPolicy: Always
-  tag: "latest"
+  tag: "next"
 
 data:
   broker_url: nats://snplw-nats:4222
+  entity_count: 1000
+  event_count: 10
 
 imagePullSecrets: []
 nameOverride: ""
@@ -25,7 +27,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 22
+  port: 8222
 
 resources:
   limits:

@@ -11,7 +11,7 @@ use pulsar::{
     TokioExecutor,
 };
 
-use crate::data::EVENT;
+use crate::data::event;
 mod data;
 
 #[derive(Serialize, Deserialize)]
@@ -39,7 +39,6 @@ impl DeserializeMessage for TestData {
 
 #[tokio::main]
 async fn main() -> Result<(), pulsar::Error> {
-
     let addr = env::var("BROKER_URL").unwrap_or_else(|_| "pulsar://127.0.0.1:6650".to_string());
     let pulsar: Pulsar<_> = Pulsar::builder(&addr, TokioExecutor).build().await?;
     let mut producer = pulsar
@@ -61,7 +60,7 @@ async fn main() -> Result<(), pulsar::Error> {
         loop {
             producer
                 .send(TestData {
-                    data: EVENT.to_string(),
+                    data: event(1).to_string(),
                 })
                 .await
                 .unwrap()

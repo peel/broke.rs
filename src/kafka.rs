@@ -1,9 +1,9 @@
 //https://github.com/fede1024/rust-rdkafka/blob/master/examples/roundtrip.rs
-use std::env;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::message::Message;
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use std::env;
 
 use crate::data::EVENT;
 mod data;
@@ -11,7 +11,14 @@ mod data;
 #[tokio::main]
 async fn main() -> Result<(), rdkafka::error::KafkaError> {
     let brokers = env::var("BROKER_URL").unwrap_or_else(|_| "localhost:9092".to_string());
-    let topic = "events";
+    let entity_count = env::var("ENTITY_COUNT")
+        .ok()
+        .and_then(|count| count.parse::<usize>().ok())
+        .unwrap_or_else(|| 1);
+    let event_count = env::var("EVENT_COUNT")
+        .ok()
+        .and_then(|count| count.parse::<usize>().ok());
+    let topic = env::var("TOPIC").unwrap_or_else(|_| "events".to_string());
 
     let producer: FutureProducer = ClientConfig::new()
         .set("bootstrap.servers", &brokers)
@@ -31,13 +38,17 @@ async fn main() -> Result<(), rdkafka::error::KafkaError> {
     tokio::spawn(async move {
         let mut i = 0_usize;
         loop {
-            producer
-                .send_result(FutureRecord::to(&topic).key(&i.to_string()).payload(EVENT))
-                .unwrap()
-                .await
-                .unwrap()
-                .unwrap();
-            i += 1;
+            if event_count.is_none() || event_count.unwrap() > i {
+                producer
+                    .send_result(FutureRecord::to(&topic).key(&i.to_string()).payload(EVENT))
+                    .unwrap()
+                    .await
+                    .unwrap()
+                    .unwrap();
+                i += 1;
+            } else {
+                break;
+            }
         }
     });
 
