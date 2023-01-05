@@ -61,6 +61,9 @@
               rustc
               rust-analyzer
               alejandra
+              kubernetes-helm
+              kubectl
+              natscli
             ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
           };
         });

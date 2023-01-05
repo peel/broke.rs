@@ -1,0 +1,17 @@
+nats:
+  image: nats:alpine
+
+  jetstream:
+    enabled: true
+
+    memStorage:
+      enabled: true
+      size: "3Gi"
+
+    fileStorage:
+      enabled: false
+
+cluster:
+  enabled: true
+  name: "snplw-nats"
+  replicas: 3
