@@ -62,10 +62,11 @@
               rust-analyzer
               rustfmt
               alejandra
-              kubectl
               natscli
               (pkgs.wrapHelm pkgs.kubernetes-helm { plugins = [ pkgs.kubernetes-helmPlugins.helm-diff ]; })
               helmfile
+       	      gnuplot
+              (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
             ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.CoreFoundation];
           };
         });

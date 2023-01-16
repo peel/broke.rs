@@ -6,10 +6,32 @@ repositories:
     url: https://nats-io.github.io/k8s/helm/charts/
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
+  - name: apache
+    url: https://pulsar.apache.org/charts
+  - name: kubernetes-dashboard
+    url: https://kubernetes.github.io/dashboard/
+  - name: kubemonkey
+    url: https://asobti.github.io/kube-monkey/charts/repo
 commonLabels:
   stack: snplw-rnd
 releases:
+  # - name: kubernetes-dashboard
+  #   namespace: peel-stl-default
+  #   chart: kubernetes-dashboard/kubernetes-dashboard
+  #   version: v2.5
+  #   set:
+  #   - name: disableSettingsAuthorizer
+  #     value: true
+  #   - name: enableInsecureLogin
+  #     value: true
+  #   - name: enableSkipLogin
+  #     value: true
+  #   - name: insecureBindAddress
+  #     value: "0.0.0.0"
+  #   values:
+  #     - clusterReadOnlyRole: true
   - name: ingress-nginx
+    namespace: peel-stl-default
     chart: ingress-nginx/ingress-nginx
     atomic: true
     installed: true
@@ -44,11 +66,20 @@ releases:
           missingFileHandler: Warn
   - name: snplw-nats
     chart: nats/nats
+    namespace: peel-stl-broker
     values:
       - nats/values.yml
   - name: snplw-nats-app
+    namespace: peel-stl-default
     chart: ./pubsub
     values:
       - ./pubsub/values.yaml
-      - broker_uri: nats://snplw-nats:4222
+      - broker_uri: nats://snplw-nats.peel-stl-broker.svc.cluster.local:4222
+  - name: snplw-kube-monkey
+    namespace: peel-stl-default
+    chart: kubemonkey/kube-monkey
+    values:
+      - config:
+          dryRun: false
+          whitelistedNamespaces: [peel-stl-broker]
 kubeVersion: v1.25
