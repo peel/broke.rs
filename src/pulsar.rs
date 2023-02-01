@@ -1,7 +1,5 @@
 //https://github.com/streamnative/pulsar-rs/blob/master/examples/round_trip.rs
-#![recursion_limit = "256"]
-#[macro_use]
-extern crate serde;
+use serde::{Deserialize, Serialize};
 use std::env;
 
 use futures::TryStreamExt;
@@ -11,8 +9,8 @@ use pulsar::{
     TokioExecutor,
 };
 
-use crate::data::event;
-mod data;
+use stream_operator::data::event;
+use stream_operator::Mode;
 
 #[derive(Serialize, Deserialize)]
 struct TestData {
@@ -36,67 +34,94 @@ impl DeserializeMessage for TestData {
         serde_json::from_slice(&payload.data)
     }
 }
-
-#[tokio::main]
-async fn main() -> Result<(), pulsar::Error> {
-    let addr = env::var("BROKER_URL").unwrap_or_else(|_| "pulsar://127.0.0.1:6650".to_string());
-    let pulsar: Pulsar<_> = Pulsar::builder(&addr, TokioExecutor).build().await?;
-    let mut producer = pulsar
-        .producer()
-        .with_topic("test")
-        .with_name("my-producer")
-        .with_options(producer::ProducerOptions {
-            schema: Some(proto::Schema {
-                r#type: proto::schema::Type::String as i32,
+pub async fn run(
+    broker_url: String,
+    topic: String,
+    entity_count: usize,
+    event_count: Option<usize>,
+    modes: Vec<&Mode>,
+) -> Result<(), Box<dyn std::error::Error + Sync + std::marker::Send>> {
+    let pulsar: Pulsar<_> = Pulsar::builder(&broker_url, TokioExecutor).build().await?;
+    if modes.contains(&&Mode::Pub) {
+        let mut producer = pulsar
+            .producer()
+            .with_topic(&topic)
+            .with_name("{topic}-producer")
+            .with_options(producer::ProducerOptions {
+                schema: Some(proto::Schema {
+                    r#type: proto::schema::Type::String as i32,
+                    ..Default::default()
+                }),
                 ..Default::default()
-            }),
-            ..Default::default()
-        })
-        .build()
-        .await?;
+            })
+            .build()
+            .await?;
 
-    tokio::task::spawn(async move {
+        tokio::task::spawn(async move {
+            let mut counter = 0usize;
+            loop {
+                producer
+                    .send(TestData {
+                        data: event(entity_count).to_string(),
+                    })
+                    .await
+                    .unwrap()
+                    .await
+                    .unwrap();
+                counter += 1;
+                if counter % 1000 == 0 {
+                    println!("sent {} messages", counter);
+                }
+            }
+        });
+    }
+    if modes.contains(&&Mode::Sub) {
+        let pulsar2: Pulsar<_> = Pulsar::builder(&broker_url, TokioExecutor).build().await?;
+
+        let mut consumer: Consumer<TestData, _> = pulsar2
+            .consumer()
+            .with_topic(&topic)
+            .with_consumer_name("{topic}_consumer")
+            .with_subscription_type(SubType::Exclusive)
+            .with_subscription("{topic}_subscription")
+            .build()
+            .await?;
+
         let mut counter = 0usize;
-        loop {
-            producer
-                .send(TestData {
-                    data: event(1).to_string(),
-                })
-                .await
-                .unwrap()
-                .await
-                .unwrap();
+        while let Some(msg) = consumer.try_next().await? {
+            println!("id: {:?}", msg.message_id());
+            consumer.ack(&msg).await?;
+            let data = msg.deserialize().unwrap();
+            if data.data.as_str() != "data" {
+                panic!("Unexpected payload: {}", &data.data);
+            }
             counter += 1;
             if counter % 1000 == 0 {
-                println!("sent {} messages", counter);
+                println!("received {} messages", counter);
             }
         }
-    });
-
-    let pulsar2: Pulsar<_> = Pulsar::builder(&addr, TokioExecutor).build().await?;
-
-    let mut consumer: Consumer<TestData, _> = pulsar2
-        .consumer()
-        .with_topic("test")
-        .with_consumer_name("test_consumer")
-        .with_subscription_type(SubType::Exclusive)
-        .with_subscription("test_subscription")
-        .build()
-        .await?;
-
-    let mut counter = 0usize;
-    while let Some(msg) = consumer.try_next().await? {
-        println!("id: {:?}", msg.message_id());
-        consumer.ack(&msg).await?;
-        let data = msg.deserialize().unwrap();
-        if data.data.as_str() != "data" {
-            panic!("Unexpected payload: {}", &data.data);
-        }
-        counter += 1;
-        if counter % 1000 == 0 {
-            println!("received {} messages", counter);
-        }
     }
-
     Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Sync + std::marker::Send>> {
+    let brokers = env::var("BROKER_URL").unwrap_or_else(|_| "pulsar://127.0.0.1:6650".to_string());
+    let entity_count = env::var("ENTITY_COUNT")
+        .ok()
+        .and_then(|count| count.parse::<usize>().ok())
+        .unwrap_or_else(|| 1);
+    let event_count = env::var("EVENT_COUNT")
+        .ok()
+        .and_then(|count| count.parse::<usize>().ok());
+    let topic = env::var("TOPIC").unwrap_or_else(|_| "events".to_string());
+
+    run(
+        brokers,
+        topic,
+        entity_count,
+        event_count,
+        vec![&Mode::Pub, &Mode::Sub],
+    )
+    .await
 }

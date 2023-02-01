@@ -1,4 +1,3 @@
-// https://github.com/kayleg/cloud-pubsub/blob/master/examples/subscribe_to_topic.rs
 use cloud_pubsub::error;
 use cloud_pubsub::{Client, EncodedMessage, FromPubSubMessage};
 use serde_derive::Deserialize;
